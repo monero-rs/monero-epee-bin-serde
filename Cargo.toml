@@ -1,0 +1,19 @@
+[package]
+name = "monero-epee-bin-serde"
+version = "1.0.0"
+authors = [ "CoBloX Team <team@coblox.tech>" ]
+documentation = "https://docs.rs/monero-epee-bin-serde"
+edition = "2018"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/comit-network/monero-epee-bin-serde"
+description = "A serde format for the binary encoding defined within the epee helper library of Monero."
+
+[dependencies]
+byteorder = "1"
+serde = "1"
+
+[dev-dependencies]
+hex = "0.4"
+hex-literal = "0.3"
+serde = { version = "1", features = [ "derive" ] }
+serde_with = "1"

@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request: # Need to run on pull-requests, otherwise PRs from forks don't run
+  push:
+    branches:
+      - main
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1.2.0
+      - uses: dprint/check@v1.3
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.41 # MSRV
+          override: true
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v1.2.0
+
+      - run: cargo build
+
+  test:
+    strategy:
+      matrix:
+        rust: [
+            stable,
+            nightly
+        ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust ${{ matrix.rust }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v1.2.0
+
+      - run: cargo test
