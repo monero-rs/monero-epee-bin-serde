@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1.2.0
-      - uses: dprint/check@v1.3
+      - uses: dprint/check@v1.4
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   msrv:
