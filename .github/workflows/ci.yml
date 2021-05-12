@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: 1.41 # MSRV
           override: true
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Install Rust ${{ matrix.rust }}
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: ${{ matrix.rust }}
           override: true
