@@ -1,3 +1,9 @@
+[![Build Status](https://img.shields.io/github/workflow/status/comit-network/monero-epee-bin-serde/CI/main)](https://github.com/comit-network/monero-epee-bin-serde/actions/workflows/ci.yml)
+[![unsafe forbidden](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
+[![Crates.io](https://img.shields.io/crates/v/monero-epee-bin-serde.svg)](https://crates.io/crates/monero-epee-bin-serde)
+[![Documentation](https://docs.rs/monero-epee-bin-serde/badge.svg)](https://docs.rs/monero-epee-bin-serde)
+[![License: MIT or Apache](https://img.shields.io/badge/License-MIT%20or%20Apache%202.0-yellow.svg)](./COPYRIGHT)
+
 # `monero-epee-bin-serde`
 
 This crate implements the binary encoding defined in the `epee` helper library of Monero [[0]], [[1]] as a [`serde`](https://docs.rs/serde) data format.
