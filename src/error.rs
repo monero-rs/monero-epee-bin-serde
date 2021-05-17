@@ -2,6 +2,10 @@ use std::convert::From;
 use std::string::{FromUtf8Error, String};
 use std::{fmt, io};
 
+/// The error type for serde operations of the [`to_bytes`] and [`from_bytes`] methods.
+///
+/// [`to_bytes`]: crate::to_bytes
+/// [`from_bytes`]: crate::from_bytes
 #[derive(Debug)]
 pub struct Error {
     kind: Kind,

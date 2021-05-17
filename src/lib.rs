@@ -1,3 +1,9 @@
+//! A [`serde`](https://docs.rs/serde) library that implements Monero's epee binary encoding [[0],
+//! [1]].
+//!
+//! [0]: https://github.com/monero-project/monero/blob/0a1ddc2eff854f3e932203a95b65a9f1efd60eef/contrib/epee/include/storages/portable_storage_from_bin.h
+//! [1]: https://github.com/monero-project/monero/blob/0a1ddc2eff854f3e932203a95b65a9f1efd60eef/contrib/epee/include/storages/portable_storage_to_bin.h
+
 mod de;
 mod error;
 mod ser;
@@ -11,6 +17,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::io::Read;
 
+/// A specialized [`Result`] type for serde operations.
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Header that needs to be at the beginning of every binary blob that follows
