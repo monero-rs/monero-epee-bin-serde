@@ -1,3 +1,4 @@
+use crate::Marker;
 use std::convert::From;
 use std::string::{FromUtf8Error, String};
 use std::{fmt, io};
@@ -13,10 +14,10 @@ enum Kind {
     UnexpectedBool { value: u8 },
     MissingHeaderBytes,
     InvalidFieldName(FromUtf8Error),
-    UnknownMarker { value: u8 },
+    UnknownMarker { value: Marker },
     Io(io::Error),
     Custom(String),
-    RootMustBeStruct { value: u8 },
+    RootMustBeStruct { value: Marker },
     F32IsNotSupported,
     OptionsAreNotSupported,
     UnitIsNotSupported,
@@ -71,7 +72,7 @@ impl Error {
         }
     }
 
-    pub(crate) fn unknown_marker(value: u8) -> Self {
+    pub(crate) fn unknown_marker(value: Marker) -> Self {
         Self {
             kind: Kind::UnknownMarker { value },
         }
@@ -89,7 +90,7 @@ impl Error {
         }
     }
 
-    pub(crate) fn root_must_be_struct(marker: u8) -> Error {
+    pub(crate) fn root_must_be_struct(marker: Marker) -> Error {
         Self {
             kind: Kind::RootMustBeStruct { value: marker },
         }
