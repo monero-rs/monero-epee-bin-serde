@@ -18,8 +18,8 @@ impl<'b> Deserializer<'b> {
 }
 
 impl<'b> Deserializer<'b> {
-    fn read_marker(&mut self, expected_marker: u8) -> Result<()> {
-        let actual_marker = self.buffer.read_u8()?;
+    fn read_expected_marker(&mut self, expected_marker: u8) -> Result<()> {
+        let actual_marker = self.read_marker()?;
 
         if expected_marker != actual_marker {
             return Err(io::Error::new(
@@ -33,6 +33,10 @@ impl<'b> Deserializer<'b> {
         }
 
         Ok(())
+    }
+
+    fn read_marker(&mut self) -> Result<u8> {
+        Ok(self.buffer.read_u8()?)
     }
 
     fn read_string(&mut self, length: usize) -> Result<String> {
@@ -255,7 +259,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        let marker = self.buffer.read_u8()?;
+        let marker = self.read_marker()?;
         self.dispatch_based_on_marker(marker, visitor)
     }
 
@@ -263,7 +267,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_BOOL)?;
+        self.read_expected_marker(MARKER_BOOL)?;
         self.dispatch_based_on_marker(MARKER_BOOL, visitor)
     }
 
@@ -271,7 +275,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I8)?;
+        self.read_expected_marker(MARKER_I8)?;
         self.dispatch_based_on_marker(MARKER_I8, visitor)
     }
 
@@ -279,7 +283,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I16)?;
+        self.read_expected_marker(MARKER_I16)?;
         self.dispatch_based_on_marker(MARKER_I16, visitor)
     }
 
@@ -287,7 +291,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I32)?;
+        self.read_expected_marker(MARKER_I32)?;
         self.dispatch_based_on_marker(MARKER_I32, visitor)
     }
 
@@ -295,7 +299,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I64)?;
+        self.read_expected_marker(MARKER_I64)?;
         self.dispatch_based_on_marker(MARKER_I64, visitor)
     }
 
@@ -303,7 +307,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U8)?;
+        self.read_expected_marker(MARKER_U8)?;
         self.dispatch_based_on_marker(MARKER_U8, visitor)
     }
 
@@ -311,7 +315,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U16)?;
+        self.read_expected_marker(MARKER_U16)?;
         self.dispatch_based_on_marker(MARKER_U16, visitor)
     }
 
@@ -319,7 +323,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U32)?;
+        self.read_expected_marker(MARKER_U32)?;
         self.dispatch_based_on_marker(MARKER_U32, visitor)
     }
 
@@ -327,7 +331,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U64)?;
+        self.read_expected_marker(MARKER_U64)?;
         self.dispatch_based_on_marker(MARKER_U64, visitor)
     }
 
@@ -342,7 +346,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_F64)?;
+        self.read_expected_marker(MARKER_F64)?;
         self.dispatch_based_on_marker(MARKER_U64, visitor)
     }
 
@@ -350,7 +354,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U8)?;
+        self.read_expected_marker(MARKER_U8)?;
         visitor.visit_char(self.buffer.read_u8()? as char)
     }
 
@@ -365,7 +369,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_STRING)?;
+        self.read_expected_marker(MARKER_STRING)?;
         self.dispatch_based_on_marker(MARKER_STRING, visitor)
     }
 
@@ -380,7 +384,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_STRING)?;
+        self.read_expected_marker(MARKER_STRING)?;
         let length = self.read_varint()?;
         let buffer = self.read_bytes(length)?;
 
@@ -427,7 +431,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        let marker = self.buffer.read_u8()?;
+        let marker = self.read_marker()?;
         self.dispatch_based_on_marker(marker, visitor)
     }
 
