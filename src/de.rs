@@ -450,7 +450,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        Err(Error::tuples_are_not_supported())
+        Err(Error::tuple_structs_are_not_supported())
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>

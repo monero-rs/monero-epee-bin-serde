@@ -23,6 +23,7 @@ enum Kind {
     UnitIsNotSupported,
     EnumsAreNotSupported,
     TuplesAreNotSupported,
+    TupleStructsAreNotSupported,
 }
 
 impl serde::ser::Error for Error {
@@ -108,6 +109,12 @@ impl Error {
         }
     }
 
+    pub(crate) fn tuple_structs_are_not_supported() -> Error {
+        Self {
+            kind: Kind::TupleStructsAreNotSupported,
+        }
+    }
+
     pub(crate) fn unit_is_not_supported() -> Error {
         Self {
             kind: Kind::UnitIsNotSupported,
@@ -138,7 +145,8 @@ impl fmt::Display for Error {
             Kind::OptionsAreNotSupported => write!(f, "Options are not supported"),
             Kind::UnitIsNotSupported => write!(f, "Unit type is not supported"),
             Kind::EnumsAreNotSupported => write!(f, "Enums are not supported"),
-            Kind::TuplesAreNotSupported => write!(f, "Tuple structs are not supported"),
+            Kind::TuplesAreNotSupported => write!(f, "Tuples are not supported"),
+            Kind::TupleStructsAreNotSupported => write!(f, "Tuple structs are not supported"),
         }
     }
 }

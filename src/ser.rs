@@ -225,7 +225,7 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
         _: &'static str,
         _: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        Err(Error::tuples_are_not_supported())
+        Err(Error::tuple_structs_are_not_supported())
     }
 
     fn serialize_tuple_variant(
