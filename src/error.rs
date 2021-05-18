@@ -1,3 +1,4 @@
+use crate::Marker;
 use std::convert::From;
 use std::string::{FromUtf8Error, String};
 use std::{fmt, io};
@@ -15,17 +16,19 @@ pub struct Error {
 enum Kind {
     NoLength,
     UnexpectedBool { value: u8 },
+    LengthMismatch { expected: usize, found: usize },
     MissingHeaderBytes,
     InvalidFieldName(FromUtf8Error),
-    UnknownMarker { value: u8 },
+    UnknownMarker { value: Marker },
     Io(io::Error),
     Custom(String),
-    RootMustBeStruct { value: u8 },
+    RootMustBeStruct { value: Marker },
     F32IsNotSupported,
     OptionsAreNotSupported,
     UnitIsNotSupported,
     EnumsAreNotSupported,
-    TuplesAreNotSupported,
+    TuplesOfTypeAreNotSupported { marker: Marker },
+    TupleStructsAreNotSupported,
 }
 
 impl serde::ser::Error for Error {
@@ -75,7 +78,13 @@ impl Error {
         }
     }
 
-    pub(crate) fn unknown_marker(value: u8) -> Self {
+    pub(crate) fn length_mismatch(expected: usize, found: usize) -> Self {
+        Self {
+            kind: Kind::LengthMismatch { expected, found },
+        }
+    }
+
+    pub(crate) fn unknown_marker(value: Marker) -> Self {
         Self {
             kind: Kind::UnknownMarker { value },
         }
@@ -93,7 +102,7 @@ impl Error {
         }
     }
 
-    pub(crate) fn root_must_be_struct(marker: u8) -> Error {
+    pub(crate) fn root_must_be_struct(marker: Marker) -> Error {
         Self {
             kind: Kind::RootMustBeStruct { value: marker },
         }
@@ -105,9 +114,15 @@ impl Error {
         }
     }
 
-    pub(crate) fn tuples_are_not_supported() -> Error {
+    pub(crate) fn tuples_of_type_are_not_supported(marker: Marker) -> Error {
         Self {
-            kind: Kind::TuplesAreNotSupported,
+            kind: Kind::TuplesOfTypeAreNotSupported { marker },
+        }
+    }
+
+    pub(crate) fn tuple_structs_are_not_supported() -> Error {
+        Self {
+            kind: Kind::TupleStructsAreNotSupported,
         }
     }
 
@@ -141,7 +156,15 @@ impl fmt::Display for Error {
             Kind::OptionsAreNotSupported => write!(f, "Options are not supported"),
             Kind::UnitIsNotSupported => write!(f, "Unit type is not supported"),
             Kind::EnumsAreNotSupported => write!(f, "Enums are not supported"),
-            Kind::TuplesAreNotSupported => write!(f, "Tuple structs are not supported"),
+            Kind::TuplesOfTypeAreNotSupported { marker } => {
+                write!(f, "Tuples of type {} are not supported", marker)
+            }
+            Kind::TupleStructsAreNotSupported => write!(f, "Tuple structs are not supported"),
+            Kind::LengthMismatch { expected, found } => write!(
+                f,
+                "Length mismatch, expected {} elements but found {}",
+                expected, found
+            ),
         }
     }
 }

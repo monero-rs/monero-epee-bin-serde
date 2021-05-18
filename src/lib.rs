@@ -15,6 +15,7 @@ use crate::de::Deserializer;
 use crate::ser::Serializer;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::fmt;
 use std::io::Read;
 
 /// A specialized [`Result`] type for serde operations.
@@ -65,19 +66,63 @@ where
     T::deserialize(&mut deserializer)
 }
 
-const MARKER_I64: u8 = 1;
-const MARKER_I32: u8 = 2;
-const MARKER_I16: u8 = 3;
-const MARKER_I8: u8 = 4;
-const MARKER_U64: u8 = 5;
-const MARKER_U32: u8 = 6;
-const MARKER_U16: u8 = 7;
+const MARKER_SINGLE_I64: Marker = Marker::Single { value: 1 };
+const MARKER_SINGLE_I32: Marker = Marker::Single { value: 2 };
+const MARKER_SINGLE_I16: Marker = Marker::Single { value: 3 };
+const MARKER_SINGLE_I8: Marker = Marker::Single { value: 4 };
+const MARKER_SINGLE_U64: Marker = Marker::Single { value: 5 };
+const MARKER_SINGLE_U32: Marker = Marker::Single { value: 6 };
+const MARKER_SINGLE_U16: Marker = Marker::Single { value: 7 };
 const MARKER_U8: u8 = 8;
-const MARKER_F64: u8 = 9;
-const MARKER_STRING: u8 = 10;
-const MARKER_BOOL: u8 = 11;
-const MARKER_STRUCT: u8 = 12;
+const MARKER_SINGLE_U8: Marker = Marker::Single { value: MARKER_U8 };
+const MARKER_SINGLE_F64: Marker = Marker::Single { value: 9 };
+const MARKER_SINGLE_STRING: Marker = Marker::Single { value: 10 };
+const MARKER_SINGLE_BOOL: Marker = Marker::Single { value: 11 };
+const MARKER_SINGLE_STRUCT: Marker = Marker::Single { value: 12 };
 const MARKER_ARRAY_ELEMENT: u8 = 0x80;
+
+#[derive(Debug, PartialEq, Eq)]
+enum Marker {
+    Single { value: u8 },
+    Sequence { element: u8 },
+}
+
+impl Marker {
+    fn from_byte(value: u8) -> Self {
+        let is_sequence = value & MARKER_ARRAY_ELEMENT > 0;
+
+        if is_sequence {
+            return Self::Sequence {
+                element: value ^ MARKER_ARRAY_ELEMENT,
+            };
+        }
+
+        Self::Single { value }
+    }
+
+    fn to_sequence(&self) -> Self {
+        match *self {
+            Marker::Single { value } => Marker::Sequence { element: value },
+            Marker::Sequence { element } => Marker::Sequence { element },
+        }
+    }
+
+    fn to_byte(&self) -> u8 {
+        match *self {
+            Marker::Single { value } => value,
+            Marker::Sequence { element } => element | MARKER_ARRAY_ELEMENT,
+        }
+    }
+}
+
+impl fmt::Display for Marker {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Single { value } => write!(f, "Single({:x})", value),
+            Self::Sequence { element } => write!(f, "Sequence({:x})", element),
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

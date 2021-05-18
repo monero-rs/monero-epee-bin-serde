@@ -1,7 +1,8 @@
 use crate::{
-    Error, Result, MARKER_ARRAY_ELEMENT, MARKER_BOOL, MARKER_F64, MARKER_I16, MARKER_I32,
-    MARKER_I64, MARKER_I8, MARKER_STRING, MARKER_STRUCT, MARKER_U16, MARKER_U32, MARKER_U64,
-    MARKER_U8,
+    Error, Marker, Result, MARKER_SINGLE_BOOL, MARKER_SINGLE_F64, MARKER_SINGLE_I16,
+    MARKER_SINGLE_I32, MARKER_SINGLE_I64, MARKER_SINGLE_I8, MARKER_SINGLE_STRING,
+    MARKER_SINGLE_STRUCT, MARKER_SINGLE_U16, MARKER_SINGLE_U32, MARKER_SINGLE_U64,
+    MARKER_SINGLE_U8,
 };
 use serde::Serialize;
 use std::io;
@@ -28,22 +29,21 @@ impl<'b> Serializer<'b> {
         }
     }
 
-    fn write_marker(&mut self, element_marker: u8) -> Result<()> {
-        if self.is_root && element_marker == MARKER_STRUCT {
+    fn write_marker(&mut self, marker: Marker) -> Result<()> {
+        if self.is_root && marker == MARKER_SINGLE_STRUCT {
             self.is_root = false;
 
             return Ok(());
         }
 
-        if self.is_root && element_marker != MARKER_STRUCT {
-            return Err(Error::root_must_be_struct(element_marker));
+        if self.is_root && marker != MARKER_SINGLE_STRUCT {
+            return Err(Error::root_must_be_struct(marker));
         }
 
         match self.state {
-            State::Empty => self.buffer.write_all(&element_marker.to_le_bytes())?,
+            State::Empty => self.buffer.write_all(&[marker.to_byte()])?,
             State::First { length } => {
-                self.buffer
-                    .write_all(&(element_marker | MARKER_ARRAY_ELEMENT).to_le_bytes())?;
+                self.buffer.write_all(&[marker.to_sequence().to_byte()])?;
                 self.buffer.write_all(&crate::varint::encode(length))?;
 
                 self.state = State::Rest;
@@ -68,63 +68,63 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
     type SerializeStructVariant = Self;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok> {
-        self.write_marker(MARKER_BOOL)?;
+        self.write_marker(MARKER_SINGLE_BOOL)?;
         self.buffer.write_all(&[v as u8])?;
 
         Ok(())
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok> {
-        self.write_marker(MARKER_I8)?;
+        self.write_marker(MARKER_SINGLE_I8)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok> {
-        self.write_marker(MARKER_I16)?;
+        self.write_marker(MARKER_SINGLE_I16)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok> {
-        self.write_marker(MARKER_I32)?;
+        self.write_marker(MARKER_SINGLE_I32)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok> {
-        self.write_marker(MARKER_I64)?;
+        self.write_marker(MARKER_SINGLE_I64)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok> {
-        self.write_marker(MARKER_U8)?;
+        self.write_marker(MARKER_SINGLE_U8)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok> {
-        self.write_marker(MARKER_U16)?;
+        self.write_marker(MARKER_SINGLE_U16)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok> {
-        self.write_marker(MARKER_U32)?;
+        self.write_marker(MARKER_SINGLE_U32)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok> {
-        self.write_marker(MARKER_U64)?;
+        self.write_marker(MARKER_SINGLE_U64)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
@@ -135,21 +135,21 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok> {
-        self.write_marker(MARKER_F64)?;
+        self.write_marker(MARKER_SINGLE_F64)?;
         self.buffer.write_all(&v.to_le_bytes())?;
 
         Ok(())
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok> {
-        self.write_marker(MARKER_U8)?;
+        self.write_marker(MARKER_SINGLE_U8)?;
         self.buffer.write_all(&[v as u8])?;
 
         Ok(())
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok> {
-        self.write_marker(MARKER_STRING)?;
+        self.write_marker(MARKER_SINGLE_STRING)?;
         self.buffer.write_all(&crate::varint::encode(v.len()))?;
         self.buffer.write_all(v.as_bytes())?;
 
@@ -158,7 +158,7 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
 
     // epee expects "bytes" to be marked as a string ...
     fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok> {
-        self.write_marker(MARKER_STRING)?;
+        self.write_marker(MARKER_SINGLE_STRING)?;
         self.buffer.write_all(&crate::varint::encode(v.len()))?;
         self.buffer.write_all(v)?;
 
@@ -225,7 +225,7 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
         _: &'static str,
         _: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        Err(Error::tuples_are_not_supported())
+        Err(Error::tuple_structs_are_not_supported())
     }
 
     fn serialize_tuple_variant(
@@ -371,7 +371,7 @@ pub struct StructSerializer<'a, 'b> {
 
 impl<'a, 'b> StructSerializer<'a, 'b> {
     fn new(inner: &'a mut Serializer<'b>, number_of_fields: usize) -> Result<Self> {
-        inner.write_marker(MARKER_STRUCT)?;
+        inner.write_marker(MARKER_SINGLE_STRUCT)?;
         inner
             .buffer
             .write_all(&crate::varint::encode(number_of_fields))?;
@@ -426,7 +426,7 @@ mod tests {
 
         (&mut serializer).serialize_bool(true).unwrap();
 
-        let expected_buffer_content = vec![MARKER_BOOL, 0x01];
+        let expected_buffer_content = vec![11, 0x01];
 
         assert_eq!(buffer, expected_buffer_content)
     }
@@ -448,8 +448,7 @@ mod tests {
         seq.serialize_bool(true).unwrap();
         serde::ser::SerializeSeq::end(seq).unwrap();
 
-        let expected_buffer_content =
-            vec![MARKER_BOOL | MARKER_ARRAY_ELEMENT, 0x0c, 0x01, 0x01, 0x01];
+        let expected_buffer_content = vec![11 | 0x80, 0x0c, 0x01, 0x01, 0x01];
 
         assert_eq!(buffer, expected_buffer_content)
     }

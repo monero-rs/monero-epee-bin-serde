@@ -1,7 +1,8 @@
 use crate::{
-    varint, Error, Result, MARKER_ARRAY_ELEMENT, MARKER_BOOL, MARKER_F64, MARKER_I16, MARKER_I32,
-    MARKER_I64, MARKER_I8, MARKER_STRING, MARKER_STRUCT, MARKER_U16, MARKER_U32, MARKER_U64,
-    MARKER_U8,
+    varint, Error, Marker, Result, MARKER_SINGLE_BOOL, MARKER_SINGLE_F64, MARKER_SINGLE_I16,
+    MARKER_SINGLE_I32, MARKER_SINGLE_I64, MARKER_SINGLE_I8, MARKER_SINGLE_STRING,
+    MARKER_SINGLE_STRUCT, MARKER_SINGLE_U16, MARKER_SINGLE_U32, MARKER_SINGLE_U64,
+    MARKER_SINGLE_U8, MARKER_U8,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use serde::de::Visitor;
@@ -18,8 +19,8 @@ impl<'b> Deserializer<'b> {
 }
 
 impl<'b> Deserializer<'b> {
-    fn read_marker(&mut self, expected_marker: u8) -> Result<()> {
-        let actual_marker = self.buffer.read_u8()?;
+    fn read_expected_marker(&mut self, expected_marker: Marker) -> Result<()> {
+        let actual_marker = self.read_marker()?;
 
         if expected_marker != actual_marker {
             return Err(io::Error::new(
@@ -33,6 +34,12 @@ impl<'b> Deserializer<'b> {
         }
 
         Ok(())
+    }
+
+    fn read_marker(&mut self) -> Result<Marker> {
+        let marker_value = self.buffer.read_u8()?;
+
+        Ok(Marker::from_byte(marker_value))
     }
 
     fn read_string(&mut self, length: usize) -> Result<String> {
@@ -74,31 +81,26 @@ impl<'b> Deserializer<'b> {
         Ok(varint)
     }
 
-    fn dispatch_based_on_marker<'de, V>(&mut self, marker: u8, visitor: V) -> Result<V::Value>
+    fn dispatch_based_on_marker<'de, V>(&mut self, marker: Marker, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        let is_sequence = marker & MARKER_ARRAY_ELEMENT > 0;
-
-        if is_sequence {
-            let element_marker = marker ^ MARKER_ARRAY_ELEMENT;
-
-            return visitor.visit_seq(SeqAccess::with_varint_encoded_fields(self, element_marker)?);
-        }
-
         match marker {
-            MARKER_I64 => visitor.visit_i64(self.buffer.read_i64::<LittleEndian>()?),
-            MARKER_I32 => visitor.visit_i32(self.buffer.read_i32::<LittleEndian>()?),
-            MARKER_I16 => visitor.visit_i16(self.buffer.read_i16::<LittleEndian>()?),
-            MARKER_I8 => visitor.visit_i8(self.buffer.read_i8()?),
-            MARKER_U64 => visitor.visit_u64(self.buffer.read_u64::<LittleEndian>()?),
-            MARKER_U32 => visitor.visit_u32(self.buffer.read_u32::<LittleEndian>()?),
-            MARKER_U16 => visitor.visit_u16(self.buffer.read_u16::<LittleEndian>()?),
-            MARKER_U8 => visitor.visit_u8(self.buffer.read_u8()?),
-            MARKER_F64 => visitor.visit_f64(self.buffer.read_f64::<LittleEndian>()?),
-            MARKER_STRING => visitor.visit_string(self.read_varint_string()?),
-            MARKER_BOOL => visitor.visit_bool(self.read_bool()?),
-            MARKER_STRUCT => visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?),
+            Marker::Sequence {
+                element: element_marker,
+            } => visitor.visit_seq(SeqAccess::with_varint_encoded_length(self, element_marker)?),
+            MARKER_SINGLE_I64 => visitor.visit_i64(self.buffer.read_i64::<LittleEndian>()?),
+            MARKER_SINGLE_I32 => visitor.visit_i32(self.buffer.read_i32::<LittleEndian>()?),
+            MARKER_SINGLE_I16 => visitor.visit_i16(self.buffer.read_i16::<LittleEndian>()?),
+            MARKER_SINGLE_I8 => visitor.visit_i8(self.buffer.read_i8()?),
+            MARKER_SINGLE_U64 => visitor.visit_u64(self.buffer.read_u64::<LittleEndian>()?),
+            MARKER_SINGLE_U32 => visitor.visit_u32(self.buffer.read_u32::<LittleEndian>()?),
+            MARKER_SINGLE_U16 => visitor.visit_u16(self.buffer.read_u16::<LittleEndian>()?),
+            MARKER_SINGLE_U8 => visitor.visit_u8(self.buffer.read_u8()?),
+            MARKER_SINGLE_F64 => visitor.visit_f64(self.buffer.read_f64::<LittleEndian>()?),
+            MARKER_SINGLE_STRING => visitor.visit_string(self.read_varint_string()?),
+            MARKER_SINGLE_BOOL => visitor.visit_bool(self.read_bool()?),
+            MARKER_SINGLE_STRUCT => visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?),
             _ => Err(Error::unknown_marker(marker)),
         }
     }
@@ -190,18 +192,22 @@ pub struct SeqAccess<'a, 'b> {
 }
 
 impl<'a, 'b> SeqAccess<'a, 'b> {
-    fn with_varint_encoded_fields(
+    fn with_varint_encoded_length(
         de: &'a mut Deserializer<'b>,
         element_marker: u8,
     ) -> Result<Self> {
         let length = de.read_varint()?;
 
-        Ok(Self {
+        Ok(Self::with_length(de, element_marker, length))
+    }
+
+    fn with_length(de: &'a mut Deserializer<'b>, element_marker: u8, length: usize) -> Self {
+        Self {
             de,
             length,
             element_marker,
             emitted_items: 0,
-        })
+        }
     }
 }
 
@@ -238,7 +244,8 @@ impl<'de, 'a, 'b> serde::de::Deserializer<'de> for SeqElementDeserializer<'a, 'b
     where
         V: Visitor<'de>,
     {
-        self.de.dispatch_based_on_marker(self.marker, visitor)
+        self.de
+            .dispatch_based_on_marker(Marker::Single { value: self.marker }, visitor)
     }
 
     serde::forward_to_deserialize_any! {
@@ -255,7 +262,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        let marker = self.buffer.read_u8()?;
+        let marker = self.read_marker()?;
         self.dispatch_based_on_marker(marker, visitor)
     }
 
@@ -263,72 +270,72 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_BOOL)?;
-        self.dispatch_based_on_marker(MARKER_BOOL, visitor)
+        self.read_expected_marker(MARKER_SINGLE_BOOL)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_BOOL, visitor)
     }
 
     fn deserialize_i8<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I8)?;
-        self.dispatch_based_on_marker(MARKER_I8, visitor)
+        self.read_expected_marker(MARKER_SINGLE_I8)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_I8, visitor)
     }
 
     fn deserialize_i16<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I16)?;
-        self.dispatch_based_on_marker(MARKER_I16, visitor)
+        self.read_expected_marker(MARKER_SINGLE_I16)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_I16, visitor)
     }
 
     fn deserialize_i32<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I32)?;
-        self.dispatch_based_on_marker(MARKER_I32, visitor)
+        self.read_expected_marker(MARKER_SINGLE_I32)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_I32, visitor)
     }
 
     fn deserialize_i64<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_I64)?;
-        self.dispatch_based_on_marker(MARKER_I64, visitor)
+        self.read_expected_marker(MARKER_SINGLE_I64)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_I64, visitor)
     }
 
     fn deserialize_u8<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U8)?;
-        self.dispatch_based_on_marker(MARKER_U8, visitor)
+        self.read_expected_marker(MARKER_SINGLE_U8)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_U8, visitor)
     }
 
     fn deserialize_u16<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U16)?;
-        self.dispatch_based_on_marker(MARKER_U16, visitor)
+        self.read_expected_marker(MARKER_SINGLE_U16)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_U16, visitor)
     }
 
     fn deserialize_u32<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U32)?;
-        self.dispatch_based_on_marker(MARKER_U32, visitor)
+        self.read_expected_marker(MARKER_SINGLE_U32)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_U32, visitor)
     }
 
     fn deserialize_u64<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U64)?;
-        self.dispatch_based_on_marker(MARKER_U64, visitor)
+        self.read_expected_marker(MARKER_SINGLE_U64)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_U64, visitor)
     }
 
     fn deserialize_f32<V>(self, _: V) -> Result<<V as Visitor<'de>>::Value>
@@ -342,15 +349,15 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_F64)?;
-        self.dispatch_based_on_marker(MARKER_U64, visitor)
+        self.read_expected_marker(MARKER_SINGLE_F64)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_U64, visitor)
     }
 
     fn deserialize_char<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_U8)?;
+        self.read_expected_marker(MARKER_SINGLE_U8)?;
         visitor.visit_char(self.buffer.read_u8()? as char)
     }
 
@@ -365,8 +372,8 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_STRING)?;
-        self.dispatch_based_on_marker(MARKER_STRING, visitor)
+        self.read_expected_marker(MARKER_SINGLE_STRING)?;
+        self.dispatch_based_on_marker(MARKER_SINGLE_STRING, visitor)
     }
 
     fn deserialize_bytes<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
@@ -380,7 +387,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_marker(MARKER_STRING)?;
+        self.read_expected_marker(MARKER_SINGLE_STRING)?;
         let length = self.read_varint()?;
         let buffer = self.read_bytes(length)?;
 
@@ -427,15 +434,33 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        let marker = self.buffer.read_u8()?;
+        let marker = self.read_marker()?;
         self.dispatch_based_on_marker(marker, visitor)
     }
 
-    fn deserialize_tuple<V>(self, _: usize, _: V) -> Result<<V as Visitor<'de>>::Value>
+    fn deserialize_tuple<V>(
+        self,
+        expected_length: usize,
+        v: V,
+    ) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        Err(Error::tuples_are_not_supported())
+        // special case tuples.
+        // byte arrays and sequences are serialized as "strings" in epee-bin
+        // hence, if we are told to deserialize a tuple, we check if the marker is a string, if that is the case, tell the deserializer to deserialize it as individual bytes
+        match self.read_marker()? {
+            MARKER_SINGLE_STRING => {
+                let got_length = self.read_varint()?;
+
+                if expected_length != got_length {
+                    return Err(Error::length_mismatch(expected_length, got_length));
+                }
+
+                v.visit_seq(SeqAccess::with_length(self, MARKER_U8, got_length))
+            }
+            marker => Err(Error::tuples_of_type_are_not_supported(marker)),
+        }
     }
 
     fn deserialize_tuple_struct<V>(
@@ -447,7 +472,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        Err(Error::tuples_are_not_supported())
+        Err(Error::tuple_structs_are_not_supported())
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
