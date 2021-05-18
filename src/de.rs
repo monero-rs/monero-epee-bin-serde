@@ -2,7 +2,7 @@ use crate::{
     varint, Error, Marker, Result, MARKER_SINGLE_BOOL, MARKER_SINGLE_F64, MARKER_SINGLE_I16,
     MARKER_SINGLE_I32, MARKER_SINGLE_I64, MARKER_SINGLE_I8, MARKER_SINGLE_STRING,
     MARKER_SINGLE_STRUCT, MARKER_SINGLE_U16, MARKER_SINGLE_U32, MARKER_SINGLE_U64,
-    MARKER_SINGLE_U8,
+    MARKER_SINGLE_U8, MARKER_U8,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use serde::de::Visitor;
@@ -198,12 +198,16 @@ impl<'a, 'b> SeqAccess<'a, 'b> {
     ) -> Result<Self> {
         let length = de.read_varint()?;
 
-        Ok(Self {
+        Ok(Self::with_length(de, element_marker, length))
+    }
+
+    fn with_length(de: &'a mut Deserializer<'b>, element_marker: u8, length: usize) -> Self {
+        Self {
             de,
             length,
             element_marker,
             emitted_items: 0,
-        })
+        }
     }
 }
 
@@ -434,11 +438,29 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
         self.dispatch_based_on_marker(marker, visitor)
     }
 
-    fn deserialize_tuple<V>(self, _: usize, _: V) -> Result<<V as Visitor<'de>>::Value>
+    fn deserialize_tuple<V>(
+        self,
+        expected_length: usize,
+        v: V,
+    ) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        Err(Error::tuples_are_not_supported())
+        // special case tuples.
+        // byte arrays and sequences are serialized as "strings" in epee-bin
+        // hence, if we are told to deserialize a tuple, we check if the marker is a string, if that is the case, tell the deserializer to deserialize it as individual bytes
+        match self.read_marker()? {
+            MARKER_SINGLE_STRING => {
+                let got_length = self.read_varint()?;
+
+                if expected_length != got_length {
+                    return Err(Error::length_mismatch(expected_length, got_length));
+                }
+
+                v.visit_seq(SeqAccess::with_length(self, MARKER_U8, got_length))
+            }
+            marker => Err(Error::tuples_of_type_are_not_supported(marker)),
+        }
     }
 
     fn deserialize_tuple_struct<V>(

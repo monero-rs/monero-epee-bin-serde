@@ -12,6 +12,7 @@ pub struct Error {
 enum Kind {
     NoLength,
     UnexpectedBool { value: u8 },
+    LengthMismatch { expected: usize, found: usize },
     MissingHeaderBytes,
     InvalidFieldName(FromUtf8Error),
     UnknownMarker { value: Marker },
@@ -22,7 +23,7 @@ enum Kind {
     OptionsAreNotSupported,
     UnitIsNotSupported,
     EnumsAreNotSupported,
-    TuplesAreNotSupported,
+    TuplesOfTypeAreNotSupported { marker: Marker },
     TupleStructsAreNotSupported,
 }
 
@@ -73,6 +74,12 @@ impl Error {
         }
     }
 
+    pub(crate) fn length_mismatch(expected: usize, found: usize) -> Self {
+        Self {
+            kind: Kind::LengthMismatch { expected, found },
+        }
+    }
+
     pub(crate) fn unknown_marker(value: Marker) -> Self {
         Self {
             kind: Kind::UnknownMarker { value },
@@ -103,9 +110,9 @@ impl Error {
         }
     }
 
-    pub(crate) fn tuples_are_not_supported() -> Error {
+    pub(crate) fn tuples_of_type_are_not_supported(marker: Marker) -> Error {
         Self {
-            kind: Kind::TuplesAreNotSupported,
+            kind: Kind::TuplesOfTypeAreNotSupported { marker },
         }
     }
 
@@ -145,8 +152,15 @@ impl fmt::Display for Error {
             Kind::OptionsAreNotSupported => write!(f, "Options are not supported"),
             Kind::UnitIsNotSupported => write!(f, "Unit type is not supported"),
             Kind::EnumsAreNotSupported => write!(f, "Enums are not supported"),
-            Kind::TuplesAreNotSupported => write!(f, "Tuples are not supported"),
+            Kind::TuplesOfTypeAreNotSupported { marker } => {
+                write!(f, "Tuples of type {} are not supported", marker)
+            }
             Kind::TupleStructsAreNotSupported => write!(f, "Tuple structs are not supported"),
+            Kind::LengthMismatch { expected, found } => write!(
+                f,
+                "Length mismatch, expected {} elements but found {}",
+                expected, found
+            ),
         }
     }
 }

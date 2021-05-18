@@ -3,7 +3,8 @@ use monero_epee_bin_serde::from_bytes;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_with::serde_as;
-use serde_with::Bytes;
+use serde_with::TryFromInto;
+use std::convert::TryInto;
 use std::fmt::Debug;
 
 #[test]
@@ -43,9 +44,9 @@ fn get_outs() {
             outs: vec![
                 OutKey {
                     height: 161,
-                    key: hex!("2d392d0be38eb4699c17767e62a063b8d2f989ec15c80e5d2665ab06f8397439"),
-                    mask: hex!("5e8b863c5b267deda13f4bc5d5ec8e59043028380f2431bc8691c15c83e1fea4"),
-                    txid: hex!("c0646e065a33b849f0d9563673ca48eb0c603fe721dd982720dba463172c246f"),
+                    key: hex!("2d392d0be38eb4699c17767e62a063b8d2f989ec15c80e5d2665ab06f8397439").try_into().unwrap(),
+                    mask: hex!("5e8b863c5b267deda13f4bc5d5ec8e59043028380f2431bc8691c15c83e1fea4").try_into().unwrap(),
+                    txid: hex!("c0646e065a33b849f0d9563673ca48eb0c603fe721dd982720dba463172c246f").try_into().unwrap(),
                     unlocked: false
                 }
             ]
@@ -87,16 +88,15 @@ struct GetOutsResponse {
     outs: Vec<OutKey>,
 }
 
-// We currently don't support tuples outside of byte slices via `deserialize_bytes`. Need to use `serde_as` to make sure we opt into the supported behaviour.
 #[serde_as]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 struct OutKey {
     height: u64,
-    #[serde_as(as = "Bytes")]
-    key: [u8; 32],
-    #[serde_as(as = "Bytes")]
-    mask: [u8; 32],
-    #[serde_as(as = "Bytes")]
-    txid: [u8; 32],
+    #[serde_as(as = "TryFromInto<[u8; 32]>")]
+    key: monero::PublicKey,
+    #[serde_as(as = "TryFromInto<[u8; 32]>")]
+    mask: monero::util::ringct::Key,
+    #[serde_as(as = "TryFromInto<[u8; 32]>")]
+    txid: monero::Hash,
     unlocked: bool,
 }
