@@ -88,7 +88,7 @@ impl<'b> Deserializer<'b> {
         match marker {
             Marker::Sequence {
                 element: element_marker,
-            } => visitor.visit_seq(SeqAccess::with_varint_encoded_fields(self, element_marker)?),
+            } => visitor.visit_seq(SeqAccess::with_varint_encoded_length(self, element_marker)?),
             MARKER_SINGLE_I64 => visitor.visit_i64(self.buffer.read_i64::<LittleEndian>()?),
             MARKER_SINGLE_I32 => visitor.visit_i32(self.buffer.read_i32::<LittleEndian>()?),
             MARKER_SINGLE_I16 => visitor.visit_i16(self.buffer.read_i16::<LittleEndian>()?),
@@ -192,7 +192,7 @@ pub struct SeqAccess<'a, 'b> {
 }
 
 impl<'a, 'b> SeqAccess<'a, 'b> {
-    fn with_varint_encoded_fields(
+    fn with_varint_encoded_length(
         de: &'a mut Deserializer<'b>,
         element_marker: u8,
     ) -> Result<Self> {
