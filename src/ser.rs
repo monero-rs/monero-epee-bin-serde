@@ -42,6 +42,13 @@ impl<'b> Serializer<'b> {
 
         match self.state {
             State::Empty => self.buffer.write_all(&[marker.to_byte()])?,
+            // special case sequences of bytes as strings
+            State::First { length } if marker == MARKER_SINGLE_U8 => {
+                self.buffer.write_all(&[MARKER_SINGLE_STRING.to_byte()])?;
+                self.buffer.write_all(&crate::varint::encode(length))?;
+
+                self.state = State::Rest;
+            }
             State::First { length } => {
                 self.buffer.write_all(&[marker.to_sequence().to_byte()])?;
                 self.buffer.write_all(&crate::varint::encode(length))?;
