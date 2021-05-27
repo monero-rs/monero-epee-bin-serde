@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- An issue where byte sequences were serialized as sequences instead of the expected byte string.
+
 ### Added
 
 - Missing documentation on public items.
