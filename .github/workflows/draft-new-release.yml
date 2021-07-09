@@ -53,7 +53,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           head: release/${{ github.event.inputs.version }}
-          base: master
+          base: main
           title: Release version ${{ github.event.inputs.version }}
           reviewers: ${{ github.actor }}
           body: |
