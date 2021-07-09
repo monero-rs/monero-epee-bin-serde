@@ -23,5 +23,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial release.
 
 [Unreleased]: https://github.com/monero-rs/monero-epee-bin-serde/compare/1.0.1...HEAD
-[1.0.1]: https://github.com/monero-rs/monero-epee-bin-serde/compare/1.0.0...1.0.1
+[1.0.1]: https://github.com/monero-rs/monero-epee-bin-serde/compare/v1.0.0...1.0.1
 [1.0.0]: https://github.com/comit-network/monero-epee-bin-serde/compare/f29ab8bbd9a7221fe921dc253ee9bf4f94e95f92...v1.0.0
