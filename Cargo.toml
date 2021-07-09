@@ -1,6 +1,6 @@
 [package]
 name = "monero-epee-bin-serde"
-version = "1.0.0"
+version = "1.0.1"
 authors = [ "CoBloX Team <team@coblox.tech>" ]
 documentation = "https://docs.rs/monero-epee-bin-serde"
 edition = "2018"
