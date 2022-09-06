@@ -17,4 +17,4 @@ hex = "0.4"
 hex-literal = "0.3"
 monero = "0.18"
 serde = { version = "1", features = [ "derive" ] }
-serde_with = "1"
+serde_with = "2"
