@@ -63,6 +63,14 @@ where
         return Err(Error::missing_header_bytes());
     }
 
+    // Monero encodes markers after each key and before each value which
+    // means if the value is a struct the marker will need to be read.
+    //
+    // However the parent struct does not have any marker so we add it here.
+    // see: https://github.com/monero-rs/monero-epee-bin-serde/issues/36
+    //
+    let mut bytes = &[&[MARKER_SINGLE_STRUCT.to_byte()], bytes].concat()[..];
+
     let mut deserializer = Deserializer::new(&mut bytes);
 
     T::deserialize(&mut deserializer)

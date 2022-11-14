@@ -479,6 +479,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
+        self.read_expected_marker(MARKER_SINGLE_STRUCT)?;
         visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
     }
 
@@ -491,6 +492,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
+        self.read_expected_marker(MARKER_SINGLE_STRUCT)?;
         visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
     }
 
