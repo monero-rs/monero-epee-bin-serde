@@ -5,7 +5,7 @@ use serde_with::serde_as;
 use serde_with::TryFromInto;
 use std::fmt::Debug;
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct BasicNodeData {
     pub my_port: u32,
     pub network_id: [u8; 16],
@@ -18,7 +18,7 @@ pub struct BasicNodeData {
 }
 
 #[serde_as]
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct CoreSyncData {
     pub cumulative_difficulty: u64,
     pub cumulative_difficulty_top64: u64,
@@ -29,7 +29,7 @@ pub struct CoreSyncData {
     pub top_version: u8,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct HandshakeR {
     pub node_data: BasicNodeData,
     pub payload_data: CoreSyncData,
@@ -55,9 +55,9 @@ fn received_handshake() {
             current_height: 2755066,
             cumulative_difficulty: 237190611121688889,
             cumulative_difficulty_top64: 0,
-            top_id: monero::Hash {
-                0: hex!("6cc497b230ba57a95edb370be8d6870c94e0992937c89b1def3a4cb7726d37ad"),
-            },
+            top_id: monero::Hash(hex!(
+                "6cc497b230ba57a95edb370be8d6870c94e0992937c89b1def3a4cb7726d37ad"
+            )),
             top_version: 16,
             pruning_seed: 384,
         },
