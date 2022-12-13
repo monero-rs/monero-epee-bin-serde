@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- deserialization of nested structs ([#37](https://github.com/monero-rs/monero-epee-bin-serde/pull/37))
+- Deserialization of nested structs ([#37](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
 
 ## [1.0.1] - 2021-07-09
 
