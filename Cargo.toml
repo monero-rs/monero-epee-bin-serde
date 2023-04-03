@@ -14,7 +14,7 @@ serde = "1"
 
 [dev-dependencies]
 hex = "0.4"
-hex-literal = "0.3"
+hex-literal = "0.4"
 monero = "0.18"
 serde = { version = "1", features = [ "derive" ] }
 serde_with = "1"
