@@ -9,9 +9,11 @@
 mod de;
 mod error;
 mod ser;
+mod value;
 mod varint;
 
 pub use crate::error::Error;
+pub use value::Value;
 
 use crate::de::Deserializer;
 use crate::ser::Serializer;
