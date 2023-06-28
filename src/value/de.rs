@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use serde::de;
-use serde::de::DeserializeSeed;
+use serde::de::{DeserializeSeed, SeqAccess};
 use serde::{de::Visitor, Deserialize};
 
 use super::Value;
@@ -42,6 +42,18 @@ impl<'de> Deserialize<'de> for Value {
             visit!(visit_f64, f64, F64);
             visit!(visit_byte_buf, Vec<u8>, Bytes);
             visit!(visit_bool, bool, Bool);
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let mut output = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+                while let Some(val) = seq.next_element()? {
+                    output.push(val);
+                }
+
+                Ok(Value::Seq(output))
+            }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
