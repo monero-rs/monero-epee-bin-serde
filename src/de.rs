@@ -268,11 +268,11 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     {
         if !self.read_header {
             self.read_header = true;
-            visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
-        } else {
-            let marker = self.read_marker()?;
-            self.dispatch_based_on_marker(marker, visitor)
+            return visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
         }
+        
+        let marker = self.read_marker()?;
+        self.dispatch_based_on_marker(marker, visitor)
     }
 
     fn deserialize_bool<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
