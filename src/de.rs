@@ -15,7 +15,10 @@ pub struct Deserializer<'b> {
 
 impl<'b> Deserializer<'b> {
     pub fn new(buffer: &'b mut dyn io::BufRead) -> Self {
-        Self { buffer, read_header: false }
+        Self {
+            buffer,
+            read_header: false,
+        }
     }
 }
 
@@ -485,8 +488,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_expected_marker(MARKER_SINGLE_STRUCT)?;
-        visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
+        self.deserialize_any(visitor)
     }
 
     fn deserialize_struct<V>(
@@ -498,8 +500,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     where
         V: Visitor<'de>,
     {
-        self.read_expected_marker(MARKER_SINGLE_STRUCT)?;
-        visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
+        self.deserialize_any(visitor)
     }
 
     fn deserialize_enum<V>(
