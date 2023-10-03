@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Rust version to 2021 and bumped MSRV to 1.70 ([#52](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
+- Updated Rust version to 2021 and bumped MSRV to 1.63 ([#52](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
 
 ### Fixed
 
