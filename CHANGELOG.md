@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Rust version to 2021 and bumped MSRV to 1.63 ([#52](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
+- Updated Rust version to 2021 and bumped MSRV to 1.63 ([#52](https://github.com/monero-rs/monero-epee-bin-serde/pull/52)).
 
 ### Fixed
 
+- No longer panic on unknown fields ([#46](https://github.com/monero-rs/monero-epee-bin-serde/pull/46))
 - Deserialization of nested structs ([#37](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
 
 ## [1.0.1] - 2021-07-09
