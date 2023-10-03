@@ -1,6 +1,0 @@
-status = [
-    "static_analysis",
-    "msrv",
-    "test (stable)",
-    # test (nightly) failing tests on nightly are fine
-]

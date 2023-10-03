@@ -1,11 +1,12 @@
 [package]
 name = "monero-epee-bin-serde"
 version = "1.0.1"
-authors = [ "CoBloX Team <team@coblox.tech>" ]
+authors = ["Monero Rust Contributors", "CoBloX Team <team@coblox.tech>"]
 documentation = "https://docs.rs/monero-epee-bin-serde"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/comit-network/monero-epee-bin-serde"
+repository = "https://github.com/monero-rs/monero-epee-bin-serde"
+rust-version = "1.63.0"
 description = "A serde format for the binary encoding defined within the epee helper library of Monero."
 
 [dependencies]
@@ -14,7 +15,7 @@ serde = "1"
 
 [dev-dependencies]
 hex = "0.4"
-hex-literal = "0.3"
-monero = "0.18"
-serde = { version = "1", features = [ "derive" ] }
-serde_with = "1"
+hex-literal = "0.4"
+monero = "0.19"
+serde = { version = "1", features = ["derive"] }
+serde_with = "3"
