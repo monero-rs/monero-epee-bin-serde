@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated Rust version to 2021 and bumped MSRV to 1.63 ([#52](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
+
 ### Fixed
 
 - Deserialization of nested structs ([#37](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
