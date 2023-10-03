@@ -15,7 +15,7 @@ pub struct Deserializer<'b> {
 
 impl<'b> Deserializer<'b> {
     pub fn new(buffer: &'b mut dyn io::BufRead) -> Self {
-        Self { 
+        Self {
             buffer,
             read_header: false,
         }
@@ -328,11 +328,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
         Err(Error::unit_is_not_supported())
     }
 
-    fn deserialize_unit_struct<V>(
-        self,
-        _: &'static str,
-        _: V,
-    ) -> Result<<V as Visitor<'de>>::Value>
+    fn deserialize_unit_struct<V>(self, _: &'static str, _: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
