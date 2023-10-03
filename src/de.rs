@@ -10,15 +10,11 @@ use std::io;
 
 pub struct Deserializer<'b> {
     buffer: &'b mut dyn io::BufRead,
-    read_header: bool,
 }
 
 impl<'b> Deserializer<'b> {
     pub fn new(buffer: &'b mut dyn io::BufRead) -> Self {
-        Self {
-            buffer,
-            read_header: false,
-        }
+        Self { buffer }
     }
 }
 
@@ -54,7 +50,7 @@ impl<'b> Deserializer<'b> {
         Ok(value)
     }
 
-    fn read_varint_marked_string(&mut self) -> Result<Vec<u8>> {
+    fn read_varint_bytes(&mut self) -> Result<Vec<u8>> {
         let length = self.read_varint()?;
         if length > MAX_STRING_LEN_POSSIBLE {
             return Err(Error::length_exceeded_max_size());
@@ -104,7 +100,7 @@ impl<'b> Deserializer<'b> {
             MARKER_SINGLE_U16 => visitor.visit_u16(self.buffer.read_u16::<LittleEndian>()?),
             MARKER_SINGLE_U8 => visitor.visit_u8(self.buffer.read_u8()?),
             MARKER_SINGLE_F64 => visitor.visit_f64(self.buffer.read_f64::<LittleEndian>()?),
-            MARKER_SINGLE_STRING => visitor.visit_byte_buf(self.read_varint_marked_string()?),
+            MARKER_SINGLE_STRING => visitor.visit_byte_buf(self.read_varint_bytes()?),
             MARKER_SINGLE_BOOL => visitor.visit_bool(self.read_bool()?),
             MARKER_SINGLE_STRUCT => visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?),
             _ => Err(Error::unknown_marker(marker)),
@@ -315,7 +311,7 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
         V: Visitor<'de>,
     {
         self.read_expected_marker(MARKER_SINGLE_STRING)?;
-        let potential_str = self.read_varint_marked_string()?;
+        let potential_str = self.read_varint_bytes()?;
         visitor.visit_string(String::from_utf8(potential_str)?)
     }
 
