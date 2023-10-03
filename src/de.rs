@@ -10,11 +10,15 @@ use std::io;
 
 pub struct Deserializer<'b> {
     buffer: &'b mut dyn io::BufRead,
+    read_header: bool,
 }
 
 impl<'b> Deserializer<'b> {
     pub fn new(buffer: &'b mut dyn io::BufRead) -> Self {
-        Self { buffer }
+        Self { 
+            buffer,
+            read_header: false,
+        }
     }
 }
 
@@ -266,16 +270,11 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
     {
         if !self.read_header {
             self.read_header = true;
-            visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?)
-        } else {
-            if !self.read_header {
-            self.read_header = true;
             return visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?);
         }
 
         let marker = self.read_marker()?;
-            self.dispatch_based_on_marker(marker, visitor)
-        }
+        self.dispatch_based_on_marker(marker, visitor)
     }
 
     serde::forward_to_deserialize_any! {
