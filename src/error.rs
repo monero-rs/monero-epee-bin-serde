@@ -17,6 +17,7 @@ enum Kind {
     NoLength,
     UnexpectedBool { value: u8 },
     LengthMismatch { expected: usize, found: usize },
+    LengthTooLong,
     MissingHeaderBytes,
     InvalidFieldName(FromUtf8Error),
     UnknownMarker { value: Marker },
@@ -137,6 +138,12 @@ impl Error {
             kind: Kind::OptionsAreNotSupported,
         }
     }
+
+    pub(crate) fn length_exceeded_max_size() -> Error {
+        Self {
+            kind: Kind::LengthTooLong,
+        }
+    }
 }
 
 impl fmt::Display for Error {
@@ -165,6 +172,7 @@ impl fmt::Display for Error {
                 "Length mismatch, expected {} elements but found {}",
                 expected, found
             ),
+            Kind::LengthTooLong => write!(f, "Length of field exceeded maximum size"),
         }
     }
 }

@@ -26,6 +26,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Header that needs to be at the beginning of every binary blob that follows
 /// this binary serialization format.
 const HEADER: &[u8] = b"\x01\x11\x01\x01\x01\x01\x02\x01\x01";
+/// The maximum length a byte array (marked as a string) can be.
+const MAX_STRING_LEN_POSSIBLE: usize = 2000000000;
 
 /// Serialize the given object to binary.
 ///
