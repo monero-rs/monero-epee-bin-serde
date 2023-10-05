@@ -173,14 +173,14 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
     }
 
     fn serialize_none(self) -> Result<Self::Ok> {
-        Err(Error::options_are_not_supported())
+        Err(Error::none_can_not_be_serialized())
     }
 
-    fn serialize_some<T: ?Sized>(self, _: &T) -> Result<Self::Ok>
+    fn serialize_some<T: ?Sized>(self, v: &T) -> Result<Self::Ok>
     where
         T: Serialize,
     {
-        Err(Error::options_are_not_supported())
+        v.serialize(self)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok> {

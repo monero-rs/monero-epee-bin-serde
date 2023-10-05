@@ -314,11 +314,12 @@ impl<'de, 'a, 'b> serde::Deserializer<'de> for &'a mut Deserializer<'b> {
         visitor.visit_string(String::from_utf8(potential_str)?)
     }
 
-    fn deserialize_option<V>(self, _: V) -> Result<<V as Visitor<'de>>::Value>
+    fn deserialize_option<V>(self, visitor: V) -> Result<<V as Visitor<'de>>::Value>
     where
         V: Visitor<'de>,
     {
-        Err(Error::options_are_not_supported())
+        // If the field is present then it's always a Some(T) in epee
+        visitor.visit_some(self)
     }
 
     fn deserialize_unit<V>(self, _: V) -> Result<<V as Visitor<'de>>::Value>
