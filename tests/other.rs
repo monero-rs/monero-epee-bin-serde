@@ -23,7 +23,7 @@ struct TestOptional {
 fn optional_val_present() {
     let val = TestOptional { val: Some(1) };
     let buf = to_bytes(&val).unwrap();
-    let val2 = from_bytes(&buf).unwrap();
+    let val2 = from_bytes(buf).unwrap();
     assert_eq!(val, val2);
 }
 
@@ -31,6 +31,6 @@ fn optional_val_present() {
 fn optional_val_not_present() {
     let val = TestOptional::default();
     let buf = to_bytes(&val).unwrap();
-    let val2 = from_bytes(&buf).unwrap();
+    let val2 = from_bytes(buf).unwrap();
     assert_eq!(val, val2);
 }
