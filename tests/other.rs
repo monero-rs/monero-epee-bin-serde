@@ -10,5 +10,5 @@ struct TestStruct {
 fn empty_sequence() {
     let obj = TestStruct::default();
     let data = to_bytes(&obj).unwrap();
-    assert_eq!(obj, from_bytes(&data).unwrap());
+    assert_eq!(obj, from_bytes(data).unwrap());
 }
