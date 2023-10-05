@@ -216,9 +216,12 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
-        self.state = State::First {
-            length: len.ok_or_else(Error::no_length)?,
-        };
+        let len = len.ok_or_else(Error::no_length)?;
+        self.state = State::First { length: len };
+
+        if len == 0 {
+            self.write_marker(Marker::Sequence { element: 255 })?;
+        }
 
         Ok(self)
     }

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed serialization of empty sequences ([#58](https://github.com/monero-rs/monero-epee-bin-serde/pull/58))
 - No longer panic on unknown fields ([#46](https://github.com/monero-rs/monero-epee-bin-serde/pull/46))
 - Deserialization of nested structs ([#37](https://github.com/monero-rs/monero-epee-bin-serde/pull/37)).
 
