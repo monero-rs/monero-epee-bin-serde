@@ -25,7 +25,7 @@ enum Kind {
     Custom(String),
     RootMustBeStruct { value: Marker },
     F32IsNotSupported,
-    OptionsAreNotSupported,
+    NoneCanNotBeSerialized,
     UnitIsNotSupported,
     EnumsAreNotSupported,
     TuplesOfTypeAreNotSupported { marker: Marker },
@@ -133,9 +133,9 @@ impl Error {
         }
     }
 
-    pub(crate) fn options_are_not_supported() -> Error {
+    pub(crate) fn none_can_not_be_serialized() -> Error {
         Self {
-            kind: Kind::OptionsAreNotSupported,
+            kind: Kind::NoneCanNotBeSerialized,
         }
     }
 
@@ -160,7 +160,7 @@ impl fmt::Display for Error {
                 write!(f, "Root element must be a struct but got {}", value)
             }
             Kind::F32IsNotSupported => write!(f, "Type f32 is not supported"),
-            Kind::OptionsAreNotSupported => write!(f, "Options are not supported"),
+            Kind::NoneCanNotBeSerialized => write!(f, "Optional fields must be wrapped in #[serde(skip_serializing_if = \"Option::is_none\")]"),
             Kind::UnitIsNotSupported => write!(f, "Unit type is not supported"),
             Kind::EnumsAreNotSupported => write!(f, "Enums are not supported"),
             Kind::TuplesOfTypeAreNotSupported { marker } => {
