@@ -9,9 +9,17 @@ repository = "https://github.com/monero-rs/monero-epee-bin-serde"
 rust-version = "1.63.0"
 description = "A serde format for the binary encoding defined within the epee helper library of Monero."
 
+[features]
+default = ["container_as_blob"]
+# Enables use of the `container_as_blob` #[serde(with = )] which is equivelent to:
+# KV_SERIALIZE_CONTAINER_POD_AS_BLOB in monero
+container_as_blob = ["dep:serde_bytes"]
+
 [dependencies]
 byteorder = "1"
 serde = "1"
+
+serde_bytes = { version = "0.11", optional = true }
 
 [dev-dependencies]
 hex = "0.4"
@@ -19,3 +27,4 @@ hex-literal = "0.4"
 monero = "0.19"
 serde = { version = "1", features = ["derive"] }
 serde_with = "3"
+rand = "0.8"

@@ -6,6 +6,8 @@
 
 #![forbid(unsafe_code)]
 
+#[cfg(feature = "container_as_blob")]
+pub mod container_as_blob;
 mod de;
 mod error;
 mod ser;
