@@ -143,7 +143,7 @@ mod tests {
 
         let bytes = to_bytes(&t).unwrap();
 
-        let tt = from_bytes(&bytes).unwrap();
+        let tt = from_bytes(bytes).unwrap();
 
         assert_eq!(t, tt);
     }

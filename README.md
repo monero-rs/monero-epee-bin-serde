@@ -11,6 +11,11 @@ This crate implements the binary encoding defined in the `epee` helper library o
 [0]: https://github.com/monero-project/monero/blob/0a1ddc2eff854f3e932203a95b65a9f1efd60eef/contrib/epee/include/storages/portable_storage_from_bin.h
 [1]: https://github.com/monero-project/monero/blob/0a1ddc2eff854f3e932203a95b65a9f1efd60eef/contrib/epee/include/storages/portable_storage_to_bin.h
 
+## Regressions
+
+Due to limitations of `serde` and weirdness in `epee` you need to wrap containers like `Vec` in `#[serde(default = "Vec::new")]` and
+optionally you can add `#[serde(skip_serializing_if = "Vec::is_empty")]` as `epee` does not serialize the first field of an array.
+
 ## License
 
 Licensed under either of
