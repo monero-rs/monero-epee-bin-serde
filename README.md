@@ -13,8 +13,8 @@ This crate implements the binary encoding defined in the `epee` helper library o
 
 ## Regressions
 
-Due to limitations of `serde` and weirdness in `epee` you need to wrap containers like `Vec` in `#[serde(default = "Vec::new")]` and
-optionally you can add `#[serde(skip_serializing_if = "Vec::is_empty")]` as `epee` does not serialize the first field of an array.
+Due to limitations of `serde` and weirdness in `epee` you need to wrap sequences like `Vec` in `#[serde(default = "Vec::new")]` and
+optionally you can add `#[serde(skip_serializing_if = "Vec::is_empty")]` as `epee` does not serialize empty sequences.
 
 ## License
 
