@@ -24,7 +24,7 @@ serde_bytes = { version = "0.11", optional = true }
 [dev-dependencies]
 hex = "0.4"
 hex-literal = "0.4"
-monero = "0.19"
+monero = "0.20"
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_with = "3"
