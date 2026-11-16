@@ -176,9 +176,9 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
         Err(Error::none_can_not_be_serialized())
     }
 
-    fn serialize_some<T: ?Sized>(self, v: &T) -> Result<Self::Ok>
+    fn serialize_some<T>(self, v: &T) -> Result<Self::Ok>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         v.serialize(self)
     }
@@ -195,14 +195,14 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
         Err(Error::enums_are_not_supported())
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _: &'static str, value: &T) -> Result<Self::Ok>
+    fn serialize_newtype_struct<T>(self, _: &'static str, value: &T) -> Result<Self::Ok>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(
+    fn serialize_newtype_variant<T>(
         self,
         _name: &'static str,
         _variant_index: u32,
@@ -210,7 +210,7 @@ impl<'a, 'b> serde::Serializer for &'a mut Serializer<'b> {
         _value: &T,
     ) -> Result<Self::Ok>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         Err(Error::enums_are_not_supported())
     }
@@ -271,9 +271,9 @@ impl<'a, 'b> serde::ser::SerializeSeq for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         value.serialize(&mut **self)?;
 
@@ -291,9 +291,9 @@ impl<'a, 'b> serde::ser::SerializeTuple for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         serde::ser::SerializeSeq::serialize_element(self, value)
     }
@@ -307,9 +307,9 @@ impl<'a, 'b> serde::ser::SerializeTupleStruct for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         unreachable!()
     }
@@ -323,9 +323,9 @@ impl<'a, 'b> serde::ser::SerializeTupleVariant for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         unreachable!()
     }
@@ -339,16 +339,16 @@ impl<'a, 'b> serde::ser::SerializeMap for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_key<T: ?Sized>(&mut self, _key: &T) -> Result<()>
+    fn serialize_key<T>(&mut self, _key: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         unreachable!()
     }
 
-    fn serialize_value<T: ?Sized>(&mut self, _value: &T) -> Result<()>
+    fn serialize_value<T>(&mut self, _value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         unreachable!()
     }
@@ -362,9 +362,9 @@ impl<'a, 'b> serde::ser::SerializeStructVariant for &'a mut Serializer<'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, _value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, _key: &'static str, _value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         unreachable!()
     }
@@ -400,9 +400,9 @@ impl<'a, 'b> serde::ser::SerializeStruct for StructSerializer<'a, 'b> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<()>
+    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<()>
     where
-        T: Serialize,
+        T: ?Sized + Serialize,
     {
         let name_length = key.len() as u8;
         self.inner.buffer.write_all(&[name_length])?;
