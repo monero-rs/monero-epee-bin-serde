@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 const HEADER: &[u8] = b"\x01\x11\x01\x01\x01\x01\x02\x01\x01";
+const MAX_DEPTH: usize = 64;
 
 #[derive(Debug, PartialEq)]
 struct ByteBlob(Vec<u8>);
@@ -95,6 +96,42 @@ fn every_truncation_returns_an_error_without_panicking() {
         }
         assert!(from_bytes::<Empty, _>(bytes).is_err());
     }
+}
+
+#[test]
+fn rejects_recursive_unknown_objects_and_object_arrays() {
+    for array in [false, true] {
+        let mut bytes = HEADER.to_vec();
+        for _ in 0..MAX_DEPTH + 2 {
+            bytes.extend_from_slice(&[4, 1, b'x', if array { 0x8c } else { 12 }]);
+            if array {
+                bytes.push(4);
+            }
+        }
+        bytes.push(0);
+        assert!(from_bytes::<Empty, _>(bytes)
+            .unwrap_err()
+            .to_string()
+            .contains("nesting"));
+    }
+}
+
+#[test]
+fn accepts_objects_nested_up_to_the_depth_limit() {
+    fn nested_objects(levels: usize) -> Vec<u8> {
+        let mut bytes = HEADER.to_vec();
+        for _ in 0..levels {
+            bytes.extend_from_slice(&[4, 1, b'x', 12]);
+        }
+        bytes.push(0);
+        bytes
+    }
+
+    from_bytes::<Empty, _>(nested_objects(MAX_DEPTH)).unwrap();
+    assert!(from_bytes::<Empty, _>(nested_objects(MAX_DEPTH + 1))
+        .unwrap_err()
+        .to_string()
+        .contains("nesting"));
 }
 
 #[test]

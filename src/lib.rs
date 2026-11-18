@@ -30,6 +30,10 @@ pub type Result<T> = std::result::Result<T, Error>;
 const HEADER: &[u8] = b"\x01\x11\x01\x01\x01\x01\x02\x01\x01";
 /// The maximum length a byte array (marked as a string) can be.
 const MAX_STRING_LEN_POSSIBLE: usize = 2000000000;
+/// The maximum depth objects and sequences can be nested to when deserializing.
+///
+/// Monero bounds its own recursion to a similar depth, and its messages only nest a few levels.
+const MAX_DEPTH: usize = 64;
 
 /// Serialize the given object to binary.
 ///
@@ -51,6 +55,7 @@ where
 /// Deserialize the provided bytes.
 ///
 /// This function assumes that the bytes are prepended with the magic header and will fail otherwise.
+/// Objects and sequences nested more than 64 levels deep are rejected.
 pub fn from_bytes<T, B>(bytes: B) -> Result<T>
 where
     T: DeserializeOwned,

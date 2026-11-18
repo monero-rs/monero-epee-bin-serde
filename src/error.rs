@@ -30,6 +30,7 @@ enum Kind {
     EnumsAreNotSupported,
     TuplesOfTypeAreNotSupported { marker: Marker },
     TupleStructsAreNotSupported,
+    DepthLimitExceeded,
 }
 
 impl serde::ser::Error for Error {
@@ -144,6 +145,12 @@ impl Error {
             kind: Kind::LengthTooLong,
         }
     }
+
+    pub(crate) fn depth_limit_exceeded() -> Error {
+        Self {
+            kind: Kind::DepthLimitExceeded,
+        }
+    }
 }
 
 impl fmt::Display for Error {
@@ -173,6 +180,7 @@ impl fmt::Display for Error {
                 expected, found
             ),
             Kind::LengthTooLong => write!(f, "Length of field exceeded maximum size"),
+            Kind::DepthLimitExceeded => write!(f, "Maximum nesting depth exceeded"),
         }
     }
 }
