@@ -6,7 +6,7 @@ use crate::{
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use serde::de::Visitor;
-use std::io;
+use std::io::{self, Read};
 
 pub struct Deserializer<'b> {
     buffer: &'b mut dyn io::BufRead,
@@ -47,9 +47,8 @@ impl<'b> Deserializer<'b> {
     }
 
     fn read_string(&mut self, length: usize) -> Result<String> {
-        let mut string_length = vec![0u8; length];
-        self.buffer.read_exact(&mut string_length)?;
-        let value = String::from_utf8(string_length)?;
+        let bytes = self.read_bytes(length)?;
+        let value = String::from_utf8(bytes)?;
 
         Ok(value)
     }
@@ -75,8 +74,17 @@ impl<'b> Deserializer<'b> {
     }
 
     fn read_bytes(&mut self, length: usize) -> Result<Vec<u8>> {
-        let mut buffer = vec![0u8; length];
-        self.buffer.read_exact(&mut buffer)?;
+        let mut buffer = Vec::with_capacity(length.min(8192));
+        let read = (&mut self.buffer)
+            .take(length as u64)
+            .read_to_end(&mut buffer)?;
+        if read != length {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "failed to fill whole buffer",
+            )
+            .into());
+        }
 
         Ok(buffer)
     }
