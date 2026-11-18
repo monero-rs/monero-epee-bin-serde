@@ -133,6 +133,7 @@ impl fmt::Display for Marker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::Deserialize;
 
     #[derive(Serialize)]
     struct RootStruct {
@@ -163,5 +164,83 @@ mod tests {
         to_bytes(&1u64).unwrap_err();
         to_bytes(&[1u64]).unwrap_err();
         to_bytes(&true).unwrap_err();
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    struct AccountBase {
+        m_creation_timestamp: u64,
+        m_keys: AccountKeys,
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    struct AccountKeys {
+        m_account_address: AccountAddress,
+        #[serde(with = "serde_bytes")]
+        m_spend_secret_key: Vec<u8>,
+        #[serde(with = "serde_bytes")]
+        m_view_secret_key: Vec<u8>,
+        #[serde(with = "serde_bytes")]
+        m_encryption_iv: Vec<u8>,
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    struct AccountAddress {
+        #[serde(with = "serde_bytes")]
+        m_spend_public_key: Vec<u8>,
+        #[serde(with = "serde_bytes")]
+        m_view_public_key: Vec<u8>,
+    }
+
+    #[test]
+    fn nested_struct_roundtrip() {
+        let original = AccountBase {
+            m_creation_timestamp: 1402600416,
+            m_keys: AccountKeys {
+                m_account_address: AccountAddress {
+                    m_spend_public_key: vec![0xaa; 32],
+                    m_view_public_key: vec![0xbb; 32],
+                },
+                m_spend_secret_key: vec![0x11; 32],
+                m_view_secret_key: vec![0x22; 32],
+                m_encryption_iv: vec![0x00; 8],
+            },
+        };
+
+        let bytes = to_bytes(&original).unwrap();
+        let restored: AccountBase = from_bytes(&bytes).unwrap();
+
+        assert_eq!(original, restored);
+    }
+
+    #[test]
+    fn nested_struct_deser_consumes_marker() {
+        #[derive(Serialize, Deserialize, PartialEq, Debug)]
+        struct Outer {
+            value: u64,
+            inner: Inner,
+        }
+        #[derive(Serialize, Deserialize, PartialEq, Debug)]
+        struct Inner {
+            x: u32,
+            y: u32,
+        }
+
+        let original = Outer {
+            value: 42,
+            inner: Inner { x: 1, y: 2 },
+        };
+
+        let bytes = to_bytes(&original).unwrap();
+
+        let payload = &bytes[9..];
+        let inner_name = b"\x05inner";
+        let pos = payload
+            .windows(inner_name.len())
+            .position(|w| w == inner_name)
+            .unwrap();
+        assert_eq!(payload[pos + inner_name.len()], 0x0c);
+
+        let restored: Outer = from_bytes(&bytes).unwrap();
+        assert_eq!(original, restored);
     }
 }
