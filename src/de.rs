@@ -2,15 +2,16 @@ use crate::{
     varint, Error, Marker, Result, MARKER_SINGLE_BOOL, MARKER_SINGLE_F64, MARKER_SINGLE_I16,
     MARKER_SINGLE_I32, MARKER_SINGLE_I64, MARKER_SINGLE_I8, MARKER_SINGLE_STRING,
     MARKER_SINGLE_STRUCT, MARKER_SINGLE_U16, MARKER_SINGLE_U32, MARKER_SINGLE_U64,
-    MARKER_SINGLE_U8, MARKER_U8, MAX_STRING_LEN_POSSIBLE,
+    MARKER_SINGLE_U8, MARKER_U8, MAX_DEPTH, MAX_STRING_LEN_POSSIBLE,
 };
 use byteorder::{LittleEndian, ReadBytesExt};
 use serde::de::Visitor;
-use std::io;
+use std::io::{self, Read};
 
 pub struct Deserializer<'b> {
     buffer: &'b mut dyn io::BufRead,
     read_header: bool,
+    depth: usize,
 }
 
 impl<'b> Deserializer<'b> {
@@ -18,6 +19,7 @@ impl<'b> Deserializer<'b> {
         Self {
             buffer,
             read_header: false,
+            depth: 0,
         }
     }
 }
@@ -47,9 +49,8 @@ impl<'b> Deserializer<'b> {
     }
 
     fn read_string(&mut self, length: usize) -> Result<String> {
-        let mut string_length = vec![0u8; length];
-        self.buffer.read_exact(&mut string_length)?;
-        let value = String::from_utf8(string_length)?;
+        let bytes = self.read_bytes(length)?;
+        let value = String::from_utf8(bytes)?;
 
         Ok(value)
     }
@@ -75,8 +76,17 @@ impl<'b> Deserializer<'b> {
     }
 
     fn read_bytes(&mut self, length: usize) -> Result<Vec<u8>> {
-        let mut buffer = vec![0u8; length];
-        self.buffer.read_exact(&mut buffer)?;
+        let mut buffer = Vec::with_capacity(length.min(8192));
+        let read = (&mut self.buffer)
+            .take(length as u64)
+            .read_to_end(&mut buffer)?;
+        if read != length {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "failed to fill whole buffer",
+            )
+            .into());
+        }
 
         Ok(buffer)
     }
@@ -87,6 +97,16 @@ impl<'b> Deserializer<'b> {
         Ok(varint)
     }
 
+    fn with_nested_depth<R>(&mut self, f: impl FnOnce(&mut Self) -> Result<R>) -> Result<R> {
+        if self.depth >= MAX_DEPTH {
+            return Err(Error::depth_limit_exceeded());
+        }
+        self.depth += 1;
+        let res = f(self);
+        self.depth -= 1;
+        res
+    }
+
     fn dispatch_based_on_marker<'de, V>(&mut self, marker: Marker, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
@@ -94,7 +114,10 @@ impl<'b> Deserializer<'b> {
         match marker {
             Marker::Sequence {
                 element: element_marker,
-            } => visitor.visit_seq(SeqAccess::with_varint_encoded_length(self, element_marker)?),
+            } => self.with_nested_depth(|de| {
+                let seq = SeqAccess::with_varint_encoded_length(de, element_marker)?;
+                visitor.visit_seq(seq)
+            }),
             MARKER_SINGLE_I64 => visitor.visit_i64(self.buffer.read_i64::<LittleEndian>()?),
             MARKER_SINGLE_I32 => visitor.visit_i32(self.buffer.read_i32::<LittleEndian>()?),
             MARKER_SINGLE_I16 => visitor.visit_i16(self.buffer.read_i16::<LittleEndian>()?),
@@ -106,7 +129,10 @@ impl<'b> Deserializer<'b> {
             MARKER_SINGLE_F64 => visitor.visit_f64(self.buffer.read_f64::<LittleEndian>()?),
             MARKER_SINGLE_STRING => visitor.visit_byte_buf(self.read_varint_bytes()?),
             MARKER_SINGLE_BOOL => visitor.visit_bool(self.read_bool()?),
-            MARKER_SINGLE_STRUCT => visitor.visit_map(MapAccess::with_varint_encoded_fields(self)?),
+            MARKER_SINGLE_STRUCT => self.with_nested_depth(|de| {
+                let map = MapAccess::with_varint_encoded_fields(de)?;
+                visitor.visit_map(map)
+            }),
             _ => Err(Error::unknown_marker(marker)),
         }
     }
