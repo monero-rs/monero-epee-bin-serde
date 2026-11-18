@@ -71,7 +71,7 @@ mod tests {
         ];
 
         for (number, expected) in test_cases {
-            let actual = hex::encode(&encode(*number));
+            let actual = hex::encode(encode(*number));
 
             assert_eq!(&actual, expected)
         }
