@@ -194,3 +194,13 @@ fn valid_wire_types_mismatched_with_rust_types_return_without_panicking() {
         }
     }
 }
+
+#[test]
+fn rejects_trailing_bytes() {
+    let mut trailing = nested_bytes();
+    trailing.push(0);
+    assert!(from_bytes::<Empty, _>(trailing)
+        .unwrap_err()
+        .to_string()
+        .contains("Trailing"));
+}

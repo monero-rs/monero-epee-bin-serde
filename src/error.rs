@@ -31,6 +31,7 @@ enum Kind {
     TuplesOfTypeAreNotSupported { marker: Marker },
     TupleStructsAreNotSupported,
     DepthLimitExceeded,
+    TrailingBytes,
 }
 
 impl serde::ser::Error for Error {
@@ -151,6 +152,12 @@ impl Error {
             kind: Kind::DepthLimitExceeded,
         }
     }
+
+    pub(crate) fn trailing_bytes() -> Error {
+        Self {
+            kind: Kind::TrailingBytes,
+        }
+    }
 }
 
 impl fmt::Display for Error {
@@ -181,6 +188,7 @@ impl fmt::Display for Error {
             ),
             Kind::LengthTooLong => write!(f, "Length of field exceeded maximum size"),
             Kind::DepthLimitExceeded => write!(f, "Maximum nesting depth exceeded"),
+            Kind::TrailingBytes => write!(f, "Trailing bytes after root object"),
         }
     }
 }
